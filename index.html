@@ -2,30 +2,39 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <title>Datos Dataddo</title>
 </head>
 <body>
 
 <h2>Datos desde Dataddo</h2>
-<table border="1" id="tabla"></table>
+<table border="1" style="width:100%; border-collapse: collapse;" id="tabla"></table>
 
 <script>
-fetch("https://data.eu-west-1.aws.dataddo.com/v1.0/get/6942b1ee3dc1bc38690e091d?type=csv")
-  .then(res => res.text())
-  .then(csv => {
-    const rows = csv.split("\n").map(r => r.split(","));
-    const table = document.getElementById("tabla");
+fetch("https://data.eu-west-1.aws.dataddo.com/v1.0/get/6942b1ee3dc1bc38690e091d?type=csv", {
+  headers: {
+    "Authorization": "Bearer 06e55d15bf1646ea8e767d272c37a41704de81268178d7184c21b0798a52c1ad"
+  }
+})
+.then(res => res.text())
+.then(csv => {
+  const rows = csv.split("\n").map(r => r.split(","));
+  const table = document.getElementById("tabla");
 
-    rows.forEach(row => {
-      const tr = document.createElement("tr");
-      row.forEach(col => {
-        const td = document.createElement("td");
-        td.textContent = col;
-        tr.appendChild(td);
-      });
-      table.appendChild(tr);
+  rows.forEach(row => {
+    const tr = document.createElement("tr");
+    row.forEach(col => {
+      const td = document.createElement("td");
+      td.textContent = col;
+      tr.appendChild(td);
     });
+    table.appendChild(tr);
   });
+})
+.catch(error => {
+  document.body.innerHTML += "<p>Error cargando datos</p>";
+  console.error(error);
+});
 </script>
 
 </body>
