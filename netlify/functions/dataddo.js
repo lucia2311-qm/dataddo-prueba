@@ -2,7 +2,7 @@
 exports.handler = async function () {
   try {
     const response = await fetch(
-      "https://data.eu-west-1.aws.dataddo.com/v1.0/get/6942b1ee3dc1bc38690e091d?type=csv",
+      "https://data.eu-west-1.aws.dataddo.com/v1.0/get/6846ff442831cfa6110ce71c?type=csv",
       {
         headers: {
           Authorization: `Bearer ${process.env.DATADDO_TOKEN}`,
