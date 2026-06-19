@@ -1,13 +1,23 @@
 
 
-exports.handler = async function () {
+exports.handler = async function (event, context) {
   try {
+
+    const token = process.env.DATADDO_TOKEN;
+
+    if (!token) {
+      return {
+        statusCode: 500,
+        body: "No se encontró DATADDO_TOKEN en Netlify"
+      };
+    }
+
     const response = await fetch(
       "https://data.eu-west-1.aws.dataddo.com/v1.0/get/6942b1ee3dc1bc38690e091d?type=csv",
       {
         method: "GET",
         headers: {
-          "Authorization": "Bearer " + process.env.DATADDO_TOKEN
+          Authorization: `Bearer ${token}`
         }
       }
     );
@@ -22,7 +32,7 @@ exports.handler = async function () {
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify(error.message)
+      body: "Error: " + error.message
     };
   }
 };
