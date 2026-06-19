@@ -1,6 +1,5 @@
 
 
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -8,59 +7,44 @@
   <title>Datos Dataddo</title>
 
   <style>
-    body {
-      font-family: Arial;
-      background: #f4f6f8;
-      padding: 20px;
-    }
-
-    h2 {
-      text-align: center;
-    }
+    body { font-family: Arial; background:#f4f6f8; padding:20px; }
+    h2 { text-align:center; }
 
     .filtros {
-      width: 90%;
-      margin: auto;
-      margin-bottom: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      width:90%;
+      margin:auto;
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:15px;
     }
 
     .filtros input {
-      padding: 6px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-
-    button {
-      padding: 8px 12px;
-      background: #28a745;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 4px;
+      padding:6px;
+      border:1px solid #ccc;
     }
 
     table {
-      width: 90%;
-      margin: auto;
-      border-collapse: collapse;
-      background: white;
+      width:90%;
+      margin:auto;
+      border-collapse:collapse;
+      background:white;
     }
 
     th, td {
-      padding: 8px;
-      border: 1px solid #ccc;
+      border:1px solid #ccc;
+      padding:8px;
     }
 
-    th {
-      background: #007BFF;
-      color: white;
-    }
+    th { background:#007BFF; color:white; }
 
-    tr:nth-child(even) {
-      background: #f9f9f9;
+    button {
+      margin: 10px auto;
+      display:block;
+      padding:10px;
+      background:#28a745;
+      color:white;
+      border:none;
     }
   </style>
 </head>
@@ -71,9 +55,7 @@
 
 <div class="filtros" id="filtros"></div>
 
-<div style="text-align:center; margin-bottom:10px;">
-  <button onclick="exportar()">Exportar CSV</button>
-</div>
+<button onclick="exportar()">Exportar CSV</button>
 
 <table id="tabla"></table>
 
@@ -88,91 +70,121 @@ const columnasDeseadas = [
   "time type id"
 ];
 
-let datosFiltrados = [];
+let datos = [];
 
 fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netlify/functions/dataddo")
-  .then(res => res.text())
-  .then(csv => {
+.then(res => res.text())
+.then(text => {
 
-    const rows = csv.split("\n").map(r => r.split(","));
-    const headers = rows[0];
+  if (!text || text.includes("Error")) {
+    throw new Error("No hay datos del endpoint");
+  }
 
-    const indices = columnasDeseadas.map(col => headers.indexOf(col));
+  const rows = text.split("\n").filter(r => r.trim() !== "").map(r => r.split(","));
 
-    // crear inputs de filtro
-    const filtrosDiv = document.getElementById("filtros");
+  const headers = rows[0];
 
-    columnasDeseadas.forEach(col => {
-      const input = document.createElement("input");
-      input.placeholder = col;
-      input.id = "filtro-" + col;
-      input.oninput = aplicarFiltros;
-      filtrosDiv.appendChild(input);
-    });
+  // debug
+  console.log("HEADERS:", headers);
 
-    // guardar datos filtrables
-    datosFiltrados = rows.slice(1)
-      .filter(row => row[headers.indexOf("project id")]) // solo con project id
-      .map(row => indices.map(i => row[i]));
+  const indices = columnasDeseadas.map(col => headers.indexOf(col));
 
-    renderTabla(datosFiltrados);
+  // chequear columnas
+  if (indices.includes(-1)) {
+    alert("Alguna columna no coincide con el CSV");
+    console.log("Indices:", indices);
+  }
+
+  // crear filtros
+  const filtrosDiv = document.getElementById("filtros");
+
+  columnasDeseadas.forEach(col => {
+    const input = document.createElement("input");
+    input.placeholder = col;
+    input.oninput = aplicarFiltros;
+    input.id = col;
+    filtrosDiv.appendChild(input);
   });
 
+  // filtrar filas con project id
+  const indexProject = headers.indexOf("project id");
+
+  datos = rows.slice(1).filter(r => r[indexProject]);
+
+  // reducir columnas
+  datos = datos.map(row => indices.map(i => row[i]));
+
+  render(datos);
+
+})
+.catch(err => {
+  document.body.innerHTML += "<p>❌ Error trayendo datos</p>";
+  console.error(err);
+});
+
+
 function aplicarFiltros() {
-  let filtrados = datosFiltrados;
+  let filtrados = datos;
 
   columnasDeseadas.forEach((col, i) => {
-    const valor = document.getElementById("filtro-" + col).value.toLowerCase();
+    const val = document.getElementById(col).value.toLowerCase();
 
-    if (valor) {
-      filtrados = filtrados.filter(row =>
-        row[i] && row[i].toLowerCase().includes(valor)
+    if (val) {
+      filtrados = filtrados.filter(r => 
+        r[i] && r[i].toLowerCase().includes(val)
       );
     }
   });
 
-  renderTabla(filtrados);
+  render(filtrados);
 }
 
-function renderTabla(data) {
+
+function render(data) {
   const table = document.getElementById("tabla");
   table.innerHTML = "";
 
-  // header
-  const trHead = document.createElement("tr");
-  columnasDeseadas.forEach(col => {
-    const th = document.createElement("th");
-    th.textContent = col;
-    trHead.appendChild(th);
-  });
-  table.appendChild(trHead);
+  if (data.length === 0) {
+    table.innerHTML = "<tr><td>No hay datos</td></tr>";
+    return;
+  }
 
-  // filas
+  const headerRow = document.createElement("tr");
+
+  columnasDeseadas.forEach(c => {
+    const th = document.createElement("th");
+    th.textContent = c;
+    headerRow.appendChild(th);
+  });
+
+  table.appendChild(headerRow);
+
   data.forEach(row => {
     const tr = document.createElement("tr");
-    row.forEach(col => {
+
+    row.forEach(cell => {
       const td = document.createElement("td");
-      td.textContent = col;
+      td.textContent = cell;
       tr.appendChild(td);
     });
+
     table.appendChild(tr);
   });
 }
 
+
 function exportar() {
   let csv = columnasDeseadas.join(",") + "\n";
 
-  const filas = document.querySelectorAll("#tabla tr");
+  document.querySelectorAll("#tabla tr").forEach((tr, i) => {
+    if (i === 0) return;
 
-  filas.forEach((tr, i) => {
-    if (i === 0) return; // skip header
-    const cols = tr.querySelectorAll("td");
-    const fila = Array.from(cols).map(td => td.textContent);
+    const fila = Array.from(tr.children).map(td => td.innerText);
     csv += fila.join(",") + "\n";
   });
 
   const blob = new Blob([csv], { type: "text/csv" });
-  const url = window.URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
