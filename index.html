@@ -12,7 +12,7 @@
 <table border="1" style="width:100%; border-collapse: collapse;" id="tabla"></table>
 
 <script>
-fetch("/.netlify/functions/dataddo")
+fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/")
   .then(res => res.text())
   .then(csv => {
     const rows = csv.split("\n").map(r => r.split(","));
