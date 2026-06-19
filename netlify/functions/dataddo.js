@@ -1,38 +1,36 @@
 
 
-exports.handler = async function (event, context) {
-  try {
+const axios = require("axios");
 
+exports.handler = async function () {
+  try {
     const token = process.env.DATADDO_TOKEN;
 
     if (!token) {
       return {
         statusCode: 500,
-        body: "No se encontró DATADDO_TOKEN en Netlify"
+        body: "Falta DATADDO_TOKEN"
       };
     }
 
-    const response = await fetch(
+    const response = await axios.get(
       "https://data.eu-west-1.aws.dataddo.com/v1.0/get/6942b1ee3dc1bc38690e091d?type=csv",
       {
-        method: "GET",
         headers: {
           Authorization: `Bearer ${token}`
         }
       }
     );
 
-    const text = await response.text();
-
     return {
       statusCode: 200,
-      body: text
+      body: response.data
     };
 
   } catch (error) {
     return {
       statusCode: 500,
-      body: "Error: " + error.message
+      body: JSON.stringify(error.response?.data || error.message)
     };
   }
 };
