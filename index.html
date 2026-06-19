@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -15,6 +16,30 @@
 
     h2 {
       text-align: center;
+    }
+
+    .filtros {
+      width: 90%;
+      margin: auto;
+      margin-bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .filtros input {
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 8px 12px;
+      background: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
     }
 
     table {
@@ -44,9 +69,27 @@
 
 <h2>Datos desde Dataddo</h2>
 
+<div class="filtros" id="filtros"></div>
+
+<div style="text-align:center; margin-bottom:10px;">
+  <button onclick="exportar()">Exportar CSV</button>
+</div>
+
 <table id="tabla"></table>
 
 <script>
+const columnasDeseadas = [
+  "date",
+  "project id",
+  "create uid",
+  "task id",
+  "employee id",
+  "department id",
+  "time type id"
+];
+
+let datosFiltrados = [];
+
 fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netlify/functions/dataddo")
   .then(res => res.text())
   .then(csv => {
@@ -54,55 +97,88 @@ fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netli
     const rows = csv.split("\n").map(r => r.split(","));
     const headers = rows[0];
 
-    // columnas que queremos
-    const columnasDeseadas = [
-      "date",
-      "project id",
-      "create uid",
-      "task id",
-      "employee id",
-      "department id",
-      "time type id"
-    ];
-
-    // indices de esas columnas
     const indices = columnasDeseadas.map(col => headers.indexOf(col));
 
-    const table = document.getElementById("tabla");
+    // crear inputs de filtro
+    const filtrosDiv = document.getElementById("filtros");
 
-    // crear header
-    const thead = document.createElement("tr");
     columnasDeseadas.forEach(col => {
-      const th = document.createElement("th");
-      th.textContent = col;
-      thead.appendChild(th);
-    });
-    table.appendChild(thead);
-
-    // recorrer filas
-    rows.slice(1).forEach(row => {
-
-      const projectId = row[headers.indexOf("project id")];
-
-      // filtrar filas sin project id
-      if (!projectId) return;
-
-      const tr = document.createElement("tr");
-
-      indices.forEach(i => {
-        const td = document.createElement("td");
-        td.textContent = row[i];
-        tr.appendChild(td);
-      });
-
-      table.appendChild(tr);
+      const input = document.createElement("input");
+      input.placeholder = col;
+      input.id = "filtro-" + col;
+      input.oninput = aplicarFiltros;
+      filtrosDiv.appendChild(input);
     });
 
-  })
-  .catch(error => {
-    document.body.innerHTML += "<p>Error cargando datos</p>";
-    console.error(error);
+    // guardar datos filtrables
+    datosFiltrados = rows.slice(1)
+      .filter(row => row[headers.indexOf("project id")]) // solo con project id
+      .map(row => indices.map(i => row[i]));
+
+    renderTabla(datosFiltrados);
   });
+
+function aplicarFiltros() {
+  let filtrados = datosFiltrados;
+
+  columnasDeseadas.forEach((col, i) => {
+    const valor = document.getElementById("filtro-" + col).value.toLowerCase();
+
+    if (valor) {
+      filtrados = filtrados.filter(row =>
+        row[i] && row[i].toLowerCase().includes(valor)
+      );
+    }
+  });
+
+  renderTabla(filtrados);
+}
+
+function renderTabla(data) {
+  const table = document.getElementById("tabla");
+  table.innerHTML = "";
+
+  // header
+  const trHead = document.createElement("tr");
+  columnasDeseadas.forEach(col => {
+    const th = document.createElement("th");
+    th.textContent = col;
+    trHead.appendChild(th);
+  });
+  table.appendChild(trHead);
+
+  // filas
+  data.forEach(row => {
+    const tr = document.createElement("tr");
+    row.forEach(col => {
+      const td = document.createElement("td");
+      td.textContent = col;
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+}
+
+function exportar() {
+  let csv = columnasDeseadas.join(",") + "\n";
+
+  const filas = document.querySelectorAll("#tabla tr");
+
+  filas.forEach((tr, i) => {
+    if (i === 0) return; // skip header
+    const cols = tr.querySelectorAll("td");
+    const fila = Array.from(cols).map(td => td.textContent);
+    csv += fila.join(",") + "\n";
+  });
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "datos.csv";
+  a.click();
+}
 </script>
 
 </body>
