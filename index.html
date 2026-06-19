@@ -1,34 +1,103 @@
 
+
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
   <title>Datos Dataddo</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    table {
+      width: 90%;
+      margin: auto;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      padding: 8px;
+      border: 1px solid #ccc;
+    }
+
+    th {
+      background: #007BFF;
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+  </style>
 </head>
+
 <body>
 
 <h2>Datos desde Dataddo</h2>
 
-<table border="1" style="width:100%; border-collapse: collapse;" id="tabla"></table>
+<table id="tabla"></table>
 
 <script>
-fetch("ttps://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netlify/functions/dataddo")
+fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netlify/functions/dataddo")
   .then(res => res.text())
   .then(csv => {
+
     const rows = csv.split("\n").map(r => r.split(","));
+    const headers = rows[0];
+
+    // columnas que queremos
+    const columnasDeseadas = [
+      "date",
+      "project id",
+      "create uid",
+      "task id",
+      "employee id",
+      "department id",
+      "time type id"
+    ];
+
+    // indices de esas columnas
+    const indices = columnasDeseadas.map(col => headers.indexOf(col));
+
     const table = document.getElementById("tabla");
 
-    rows.forEach(row => {
+    // crear header
+    const thead = document.createElement("tr");
+    columnasDeseadas.forEach(col => {
+      const th = document.createElement("th");
+      th.textContent = col;
+      thead.appendChild(th);
+    });
+    table.appendChild(thead);
+
+    // recorrer filas
+    rows.slice(1).forEach(row => {
+
+      const projectId = row[headers.indexOf("project id")];
+
+      // filtrar filas sin project id
+      if (!projectId) return;
+
       const tr = document.createElement("tr");
 
-      row.forEach(col => {
+      indices.forEach(i => {
         const td = document.createElement("td");
-        td.textContent = col;
+        td.textContent = row[i];
         tr.appendChild(td);
       });
 
       table.appendChild(tr);
     });
+
   })
   .catch(error => {
     document.body.innerHTML += "<p>Error cargando datos</p>";
