@@ -63,7 +63,7 @@
 const columnasDeseadas = [
   "date",
   "project_id",
-  "create _uid",
+  "create_uid",
   "task_id",
   "employee_id",
   "department_id",
@@ -107,7 +107,7 @@ fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netli
   });
 
   // filtrar filas con project id
-  const indexProject = headers.indexOf("project id");
+  const indexProject = headers.indexOf("project_id");
 
   datos = rows.slice(1).filter(r => r[indexProject]);
 
