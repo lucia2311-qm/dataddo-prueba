@@ -72,7 +72,7 @@ const columnasDeseadas = [
 
 let datos = [];
 
-fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netlify/functions/dataddo")
+fetch("/.netlify/functions/dataddo") // ✅ ruta correcta
 .then(res => res.text())
 .then(text => {
 
@@ -80,22 +80,31 @@ fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netli
     throw new Error("No hay datos del endpoint");
   }
 
-  const rows = text.split("\n").filter(r => r.trim() !== "").map(r => r.split(","));
+  // ✅ Parseo CSV básico
+  const rows = text
+    .split("\n")
+    .filter(r => r.trim() !== "")
+    .map(r => r.split(","));
 
-  const headers = rows[0];
+  // ✅ Normalizar headers
+  const headers = rows[0].map(h => h.trim());
+  const normalizedHeaders = headers.map(h => h.toLowerCase());
 
-  // debug
   console.log("HEADERS:", headers);
 
-  const indices = columnasDeseadas.map(col => headers.indexOf(col));
+  // ✅ Buscar columnas correctamente
+  const indices = columnasDeseadas.map(col => 
+    normalizedHeaders.indexOf(col.toLowerCase())
+  );
 
-  // chequear columnas
+  console.log("Indices:", indices);
+
   if (indices.includes(-1)) {
-    alert("Alguna columna no coincide con el CSV");
-    console.log("Indices:", indices);
+    alert("Alguna columna no coincide con el CSV. Revisar consola (F12)");
+    return;
   }
 
-  // crear filtros
+  // ✅ Crear filtros
   const filtrosDiv = document.getElementById("filtros");
 
   columnasDeseadas.forEach(col => {
@@ -106,12 +115,12 @@ fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netli
     filtrosDiv.appendChild(input);
   });
 
-  // filtrar filas con project id
-  const indexProject = headers.indexOf("project_id");
+  // ✅ Filtrar por project_id existente
+  const indexProject = normalizedHeaders.indexOf("project_id");
 
   datos = rows.slice(1).filter(r => r[indexProject]);
 
-  // reducir columnas
+  // ✅ Reducir columnas
   datos = datos.map(row => indices.map(i => row[i]));
 
   render(datos);
@@ -121,7 +130,6 @@ fetch("https://6a352679e64a2ab9c906125b--super-hamster-d9edaa.netlify.app/.netli
   document.body.innerHTML += "<p>❌ Error trayendo datos</p>";
   console.error(err);
 });
-
 
 function aplicarFiltros() {
   let filtrados = datos;
@@ -138,7 +146,6 @@ function aplicarFiltros() {
 
   render(filtrados);
 }
-
 
 function render(data) {
   const table = document.getElementById("tabla");
@@ -172,7 +179,6 @@ function render(data) {
   });
 }
 
-
 function exportar() {
   let csv = columnasDeseadas.join(",") + "\n";
 
@@ -195,4 +201,3 @@ function exportar() {
 
 </body>
 </html>
-
