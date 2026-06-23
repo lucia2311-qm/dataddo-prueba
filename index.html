@@ -72,7 +72,11 @@ const columnasDeseadas = [
 
 let datos = [];
 
-fetch("/.netlify/functions/dataddo") // ✅ ruta correcta
+// ✅ función clave: normaliza todo
+const normalize = (str) =>
+  str.toLowerCase().replace(/[\s_]/g, "");
+
+fetch("/.netlify/functions/dataddo")
 .then(res => res.text())
 .then(text => {
 
@@ -80,31 +84,30 @@ fetch("/.netlify/functions/dataddo") // ✅ ruta correcta
     throw new Error("No hay datos del endpoint");
   }
 
-  // ✅ Parseo CSV básico
   const rows = text
     .split("\n")
     .filter(r => r.trim() !== "")
     .map(r => r.split(","));
 
-  // ✅ Normalizar headers
   const headers = rows[0].map(h => h.trim());
-  const normalizedHeaders = headers.map(h => h.toLowerCase());
+  const normalizedHeaders = headers.map(h => normalize(h));
 
   console.log("HEADERS:", headers);
+  console.log("NORMALIZED:", normalizedHeaders);
 
-  // ✅ Buscar columnas correctamente
-  const indices = columnasDeseadas.map(col => 
-    normalizedHeaders.indexOf(col.toLowerCase())
+  // ✅ indices robustos
+  const indices = columnasDeseadas.map(col =>
+    normalizedHeaders.indexOf(normalize(col))
   );
 
   console.log("Indices:", indices);
 
   if (indices.includes(-1)) {
-    alert("Alguna columna no coincide con el CSV. Revisar consola (F12)");
+    alert("Alguna columna no coincide con el CSV. Revisá consola (F12)");
     return;
   }
 
-  // ✅ Crear filtros
+  // ✅ crear filtros dinámicos
   const filtrosDiv = document.getElementById("filtros");
 
   columnasDeseadas.forEach(col => {
@@ -115,12 +118,12 @@ fetch("/.netlify/functions/dataddo") // ✅ ruta correcta
     filtrosDiv.appendChild(input);
   });
 
-  // ✅ Filtrar por project_id existente
-  const indexProject = normalizedHeaders.indexOf("project_id");
+  // ✅ buscar project_id robustamente
+  const indexProject = normalizedHeaders.indexOf(normalize("project_id"));
 
   datos = rows.slice(1).filter(r => r[indexProject]);
 
-  // ✅ Reducir columnas
+  // ✅ mapear columnas correctas
   datos = datos.map(row => indices.map(i => row[i]));
 
   render(datos);
@@ -138,7 +141,7 @@ function aplicarFiltros() {
     const val = document.getElementById(col).value.toLowerCase();
 
     if (val) {
-      filtrados = filtrados.filter(r => 
+      filtrados = filtrados.filter(r =>
         r[i] && r[i].toLowerCase().includes(val)
       );
     }
